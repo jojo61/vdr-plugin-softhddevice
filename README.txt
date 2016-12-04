@@ -4,6 +4,8 @@ Copyright (c) 2011 - 2013 by Johns.  All Rights Reserved.
 
 Contributor(s):
 
+jojo61 
+
 License: AGPLv3
 
 This program is free software: you can redistribute it and/or modify
@@ -44,8 +46,22 @@ A software and GPU emulated HD output device plugin for VDR.
 
 To compile you must have the 'requires' installed.
 
+
+This is a fork of johns original softhddevice work and I just added support for HEVC VDPAU support.
+Currently I have tested it with a GTX 1050 from NVIDIA and a RX 460 from AMD.
+
+Current Status NVIDA:
+The NVIDIA driver currently does only support HEVC with 8 Bit. Also the routing of the sound to the HDMI port does not work. 
+It always sends the sound to the first port (DVI Port). This seems a problem from alsa. 
+
+Current Status of AMD:
+The AMD driver suppports both (8 Bit and 10 Bit) HEVC codecs. But currently FFMEPG does not support the 10 Bit part.
+
+So with both cards only DVB-T2 HD can be decoded. I will try to provide a patch fpr FFMPEG 3.2 to support 10 Bit HEVC soon.
+You have to adapt the Makefile to your needs. I use FFMPEG 3.2, but I assume 3.1 will also do.
+
 Good luck
-johns
+jojo61
 
 Quickstart:
 -----------
@@ -56,18 +72,8 @@ Install:
 --------
 	1a) git
 
-	git clone git://projects.vdr-developer.org/vdr-plugin-softhddevice.git
+	git clone git://github.com/jojo61/vdr-plugin-softhddevice.git
 	cd vdr-plugin-softhddevice
-	make
-	make install
-
-	2a) tarball
-
-	Download latest version from:
-	    http://projects.vdr-developer.org/projects/plg-softhddevice/files
-
-	tar vxf vdr-softhddevice-*.tar.bz2
-	cd softhddevice-*
 	make
 	make install
 

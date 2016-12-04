@@ -24,13 +24,15 @@ OPENGL ?= $(shell pkg-config --exists gl glu && echo 1)
     # screensaver disable/enable
 SCREENSAVER ?= 1
     # use ffmpeg libswresample
-SWRESAMPLE ?= $(shell pkg-config --exists libswresample && echo 1)
+#SWRESAMPLE ?= $(shell pkg-config --exists libswresample && echo 1)
+SWRESAMPLE = 1
     # use libav libavresample
 ifneq ($(SWRESAMPLE),1)
 AVRESAMPLE ?= $(shell pkg-config --exists libavresample && echo 1)
+AVRESAMPLE = 0
 endif
 
-CONFIG := # -DDEBUG #-DOSD_DEBUG	# enable debug output+functions
+CONFIG :=  #-DDEBUG #-DOSD_DEBUG	# enable debug output+functions
 #CONFIG += -DSTILL_DEBUG=2		# still picture debug verbose level
 
 CONFIG += -DAV_INFO -DAV_INFO_TIME=3000	# info/debug a/v sync
@@ -125,17 +127,26 @@ LIBS += $(shell pkg-config --libs xcb-screensaver xcb-dpms)
 endif
 ifeq ($(SWRESAMPLE),1)
 CONFIG += -DUSE_SWRESAMPLE
-_CFLAGS += $(shell pkg-config --cflags libswresample)
-LIBS += $(shell pkg-config --libs libswresample)
+#_CFLAGS += $(shell pkg-config --cflags libswresample)
+#LIBS += $(shell pkg-config --libs libswresample)
 endif
-ifeq ($(AVRESAMPLE),1)
-CONFIG += -DUSE_AVRESAMPLE
-_CFLAGS += $(shell pkg-config --cflags libavresample)
-LIBS += $(shell pkg-config --libs libavresample)
-endif
+#ifeq ($(AVRESAMPLE),1)
+#CONFIG += -DUSE_AVRESAMPLE
+#_CFLAGS += $(shell pkg-config --cflags libavresample)
+#LIBS += $(shell pkg-config --libs libavresample)
+#endif
 
-_CFLAGS += $(shell pkg-config --cflags libavcodec x11 x11-xcb xcb xcb-icccm)
-LIBS += -lrt $(shell pkg-config --libs libavcodec x11 x11-xcb xcb xcb-icccm)
+#_CFLAGS += $(shell pkg-config --cflags libavcodec x11 x11-xcb xcb xcb-icccm)
+#LIBS += -lrt $(shell pkg-config --libs libavcodec x11 x11-xcb xcb xcb-icccm)
+_CFLAGS += $(shell pkg-config --cflags  x11 x11-xcb xcb xcb-icccm)
+LIBS += -lrt $(shell pkg-config --libs  x11 x11-xcb xcb xcb-icccm)
+
+_CFLAGS += -I/usr/include/libavcodec
+LIBS += -lavcodec
+_CFLAGS += -I/usr/include/libavresample
+#LIBS += -lavresample
+_CFLAGS += -I/usr/include/libswresample
+LIBS += -lswresample -lswscale
 
 ### Includes and Defines (add further entries here):
 

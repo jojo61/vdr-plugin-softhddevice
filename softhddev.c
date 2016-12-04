@@ -1943,6 +1943,13 @@ int VideoDecodeInput(VideoStream * stream)
 		CodecVideoOpen(stream->Decoder, AV_CODEC_ID_H264);
 	    }
 	    break;
+        case AV_CODEC_ID_HEVC:
+            if (stream->LastCodecID != AV_CODEC_ID_HEVC) {
+                stream->LastCodecID = AV_CODEC_ID_HEVC;
+                CodecVideoOpen(stream->Decoder, AV_CODEC_ID_HEVC);
+            }
+            break;
+
 	default:
 	    break;
     }
@@ -2288,6 +2295,21 @@ int PlayVideo3(VideoStream * stream, const uint8_t * data, int size)
 	VideoEnqueue(stream, pts, check - 2, l + 2);
 	return size;
     }
+     // HEVC Codec 
+    if ((data[6] & 0xC0) == 0x80 && z >= 2 && check[0] == 0x01
+         && check[1] == 0x46) {
+         // old PES HDTV recording z == 2 -> stronger check!
+         if (stream->CodecID == AV_CODEC_ID_HEVC) {
+             VideoNextPacket(stream, AV_CODEC_ID_HEVC);
+         } else {
+             Debug(3, "video: hvec detected\n");
+             stream->CodecID = AV_CODEC_ID_HEVC;
+         }
+         // SKIP PES header (ffmpeg supports short start code)
+         VideoEnqueue(stream, pts, check - 2, l + 2);
+         return size;
+    }
+
     // PES start code 0x00 0x00 0x01 0x00|0xb3
     if (z > 1 && check[0] == 0x01 && (!check[1] || check[1] == 0xb3)) {
 	if (stream->CodecID == AV_CODEC_ID_MPEG2VIDEO) {
