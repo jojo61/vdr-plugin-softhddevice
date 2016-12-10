@@ -7556,7 +7556,6 @@ static enum AVPixelFormat Vdpau_get_format(VdpauDecoder * decoder,
    
     VideoDecoder *ist = video_ctx->opaque;
 
-
     if (!VideoHardwareDecoder || (video_ctx->codec_id == AV_CODEC_ID_MPEG2VIDEO
 	    && VideoHardwareDecoder == 1)
 	) {				// hardware disabled by config
@@ -7771,6 +7770,7 @@ static enum AVPixelFormat Vdpau_get_format(VdpauDecoder * decoder,
 
   slow_path:
     // no accelerated format found
+    ist->hwaccel_get_buffer = NULL;
     decoder->Profile = VDP_INVALID_HANDLE;
     decoder->SurfacesNeeded = VIDEO_SURFACES_MAX + 2;
     decoder->PixFmt = AV_PIX_FMT_NONE;
@@ -8415,7 +8415,7 @@ static void VdpauRenderFrame(VdpauDecoder * decoder,
 	switch (video_ctx->pix_fmt) {
 	    case AV_PIX_FMT_YUV420P:
 	    case AV_PIX_FMT_YUVJ420P:	// some streams produce this
-            case AV_PIX_FMT_YUV420P10LE:
+            case AV_PIX_FMT_YUV420P10LE:  // for softdecode of HEVC 10 Bit
 		break;
 	    case AV_PIX_FMT_YUV422P:
 	    case AV_PIX_FMT_YUV444P:
@@ -8433,21 +8433,6 @@ static void VdpauRenderFrame(VdpauDecoder * decoder,
 	pitches[1] = frame->linesize[2];
 	pitches[2] = frame->linesize[1];
 
-Debug(3,"Frame width %d hight %d line1 %d line2 %d line3 %d\n",video_ctx->width,video_ctx->height,pitches[0],pitches[1],pitches[2]);
-
-#if 0
-    dst_pix_fmt = PIX_FMT_YUV420P;
-    /* point pict at the queue */
-
-    pict.data[0] = vp->bmp->pixels[0];
-    pict.data[1] = vp->bmp->pixels[2];
-    pict.data[2] = vp->bmp->pixels[1];
-    
-    pict.linesize[0] = vp->bmp->pitches[0];
-    pict.linesize[1] = vp->bmp->pitches[2];
-    pict.linesize[2] = vp->bmp->pitches[1];
-    
-#endif
     // Convert the image into YUV420 format 
     if(video_ctx->pix_fmt == AV_PIX_FMT_YUV420P10LE) {
       struct SwsContext *img_convert_ctx;
@@ -8502,7 +8487,7 @@ static void *VdpauGetHwAccelContext(VdpauDecoder * decoder)
     (void)decoder;
 
     // FIXME: new ffmpeg versions supports struct AVVDPAUContext
-    Error(_("video: get hwaccel context, not supported\n"));
+    //Error(_("video: get hwaccel context, not supported\n"));
     return NULL;
 }
 
@@ -8969,7 +8954,8 @@ static void VdpauDisplayFrame(void)
 
 	filled = atomic_read(&decoder->SurfacesFilled);
 	// need 1 frame for progressive, 3 frames for interlaced
-	if (filled < 1 + 2 * decoder->Interlaced) {
+//	if (filled < 1 + 2 * decoder->Interlaced) { // JOJO
+	if (filled < 0 + 2 * decoder->Interlaced) { 
 	    // FIXME: rewrite MixVideo to support less surfaces
 	    if ((VideoShowBlackPicture && !decoder->TrickSpeed)
 		|| decoder->Closing < -300) {
@@ -9248,7 +9234,7 @@ static void VdpauSyncDecoder(VdpauDecoder * decoder)
 		atomic_set(&decoder->SurfacesFilled, 0);
 	    }
 	}
-	Debug(3,"filled zu klein %d  Field %d Interlaced %d\n",filled,decoder->SurfaceField,decoder->Interlaced);
+//	Debug(3,"filled zu klein %d  Field %d Interlaced %d\n",filled,decoder->SurfaceField,decoder->Interlaced);
 	goto out;
     }
 

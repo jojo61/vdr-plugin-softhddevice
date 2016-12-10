@@ -2669,6 +2669,8 @@ void StillPicture(const uint8_t * data, int size)
     static uint8_t seq_end_mpeg[] = { 0x00, 0x00, 0x01, 0xB7 };
     // H264 NAL End of Sequence
     static uint8_t seq_end_h264[] = { 0x00, 0x00, 0x00, 0x01, 0x0A };
+    // H265 NAL End of Sequence
+    static uint8_t seq_end_h265[] = { 0x00, 0x00, 0x00, 0x01, 0x48, 0x00 };
     int i;
     int old_video_hardware_decoder;
 
@@ -2702,7 +2704,7 @@ void StillPicture(const uint8_t * data, int size)
 #ifdef STILL_DEBUG
     fprintf(stderr, "still-picture\n");
 #endif
-    for (i = 0; i < (MyVideoStream->CodecID == AV_CODEC_ID_MPEG2VIDEO ? 4 : 4);
+    for (i = 0; i < (MyVideoStream->CodecID == AV_CODEC_ID_HEVC ? 1 : 4);
 	++i) {
 	const uint8_t *split;
 	int n;
@@ -2751,6 +2753,9 @@ void StillPicture(const uint8_t * data, int size)
 	if (MyVideoStream->CodecID == AV_CODEC_ID_H264) {
 	    VideoEnqueue(MyVideoStream, AV_NOPTS_VALUE, seq_end_h264,
 		sizeof(seq_end_h264));
+	} else if (MyVideoStream->CodecID == AV_CODEC_ID_HEVC) {
+	    VideoEnqueue(MyVideoStream, AV_NOPTS_VALUE, seq_end_h265,
+		sizeof(seq_end_h265));
 	} else {
 	    VideoEnqueue(MyVideoStream, AV_NOPTS_VALUE, seq_end_mpeg,
 		sizeof(seq_end_mpeg));
