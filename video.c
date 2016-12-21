@@ -150,6 +150,7 @@ typedef enum
 #ifdef USE_VDPAU
 #include <vdpau/vdpau_x11.h>
 #include <libavcodec/vdpau.h>
+#include <libavutil/hwcontext_vdpau.h>
 #endif
 
 #include <libavcodec/avcodec.h>
@@ -168,8 +169,7 @@ typedef enum
 #endif
 #include <libavcodec/vaapi.h>
 #include <libavutil/pixdesc.h>
-#include "libavutil/hwcontext.h"
-#include "libavutil/hwcontext_vdpau.h"
+#include <libavutil/hwcontext.h>
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(54,86,100)
     ///
@@ -2274,6 +2274,12 @@ static void Vaapi1080i(void)
     // check profile
     p = VaapiFindProfile(profiles, profile_n, VAProfileH264High);
     if (p == -1) {
+    p = VaapiFindProfile(profiles, profile_n, VAProfileHEVCMain10);
+    }
+    if (p == -1) {
+    p = VaapiFindProfile(profiles, profile_n, VAProfileHEVCMain);
+    }
+    if (p == -1) {
 	Debug(3, "\tno profile found\n");
 	return;
     }
@@ -2975,6 +2981,24 @@ static enum AVPixelFormat Vaapi_get_format(VaapiDecoder * decoder,
 		p = VaapiFindProfile(profiles, profile_n, VAProfileH264High);
 	    }
 	    break;
+       case AV_CODEC_ID_HEVC:
+            decoder->SurfacesNeeded =
+               CODEC_SURFACES_H264 + VIDEO_SURFACES_MAX + 2;
+            // try more simple formats, fallback to better
+            if (video_ctx->profile == FF_PROFILE_HEVC_MAIN_10) {
+               p = VaapiFindProfile(profiles, profile_n,
+                   VAProfileHEVCMain10);
+               if (p == -1) {
+                   p = VaapiFindProfile(profiles, profile_n,
+                       VAProfileHEVCMain);
+               }
+            } else if (video_ctx->profile == FF_PROFILE_HEVC_MAIN) {
+               p = VaapiFindProfile(profiles, profile_n, VAProfileHEVCMain);
+            }
+            if (p == -1) {
+                p = VaapiFindProfile(profiles, profile_n, VAProfileHEVCMain10);
+            }
+           break;
 	case AV_CODEC_ID_WMV3:
 	    decoder->SurfacesNeeded =
 		CODEC_SURFACES_VC1 + VIDEO_SURFACES_MAX + 2;
@@ -4789,7 +4813,7 @@ static void VaapiRenderFrame(VaapiDecoder * decoder,
 
 	    av_picture_copy(picture, (AVPicture *) frame, video_ctx->pix_fmt,
 		width, height);
-	}
+	} 
 
 	if (vaUnmapBuffer(VaDisplay, decoder->Image->buf)
 	    != VA_STATUS_SUCCESS) {

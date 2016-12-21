@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: VDR \n"
 "Report-Msgid-Bugs-To: <see README>\n"
-"POT-Creation-Date: 2015-10-20 14:39+0200\n"
+"POT-Creation-Date: 2016-12-10 15:32+0100\n"
 "PO-Revision-Date: blabla\n"
 "Last-Translator: blabla\n"
 "Language-Team: blabla\n"
@@ -599,15 +599,6 @@ msgstr "Audio Driftkorrektur"
 
 msgid "Pass-through default"
 msgstr "Pass-Through-Standard"
-
-msgid "  PCM pass-through"
-msgstr ""
-
-msgid "  AC-3 pass-through"
-msgstr ""
-
-msgid "  E-AC-3 pass-through"
-msgstr ""
 
 msgid "Enable (E-)AC-3 (decoder) downmix"
 msgstr "Aktiviere (E-)AC-3 (decoder) downmix"
@@ -1308,11 +1299,11 @@ msgstr ""
 msgid "video/vdpau: pixel format %d not supported\n"
 msgstr ""
 
-#, c-format
-msgid "video/vdpau: can't put video surface bits: %s\n"
+msgid "Cannot initialize the conversion context!\n"
 msgstr ""
 
-msgid "video: get hwaccel context, not supported\n"
+#, c-format
+msgid "video/vdpau: can't put video surface bits: %s\n"
 msgstr ""
 
 #, c-format
