@@ -8979,7 +8979,7 @@ static void VdpauDisplayFrame(void)
 	filled = atomic_read(&decoder->SurfacesFilled);
 	// need 1 frame for progressive, 3 frames for interlaced
 //	if (filled < 1 + 2 * decoder->Interlaced) { // JOJO
-	if (filled < 0 + 2 * decoder->Interlaced) { 
+	if (filled < 1 + 2 * decoder->Interlaced) { 
 	    // FIXME: rewrite MixVideo to support less surfaces
 	    if ((VideoShowBlackPicture && !decoder->TrickSpeed)
 		|| decoder->Closing < -300) {
@@ -9222,7 +9222,7 @@ static void VdpauSyncDecoder(VdpauDecoder * decoder)
 	    err = VdpauMessage(2, "video: speed up video, droping frame\n");
 	    ++decoder->FramesDropped;
 	    VdpauAdvanceDecoderFrame(decoder);
-	    filled = atomic_read(&decoder->SurfacesFilled);
+//	    filled = atomic_read(&decoder->SurfacesFilled);
 	    decoder->SyncCounter = 1;
 	}
 #if defined(DEBUG) || defined(AV_INFO)
@@ -9242,7 +9242,7 @@ static void VdpauSyncDecoder(VdpauDecoder * decoder)
   skip_sync:
     // check if next field is available
 //JOJO    if (decoder->SurfaceField && filled <= 1 + 2 * decoder->Interlaced) {
-    if (decoder->SurfaceField && filled < 1 + 2 * decoder->Interlaced) {
+    if (decoder->SurfaceField && filled <= 1 + 2 * decoder->Interlaced) {
 	if (filled == 1 + 2 * decoder->Interlaced) {
 	    ++decoder->FramesDuped;
 	    // FIXME: don't warn after stream start, don't warn during pause
@@ -9328,7 +9328,7 @@ static void VdpauSyncRenderFrame(VdpauDecoder * decoder,
     }
 #ifdef DEBUG
     if (!atomic_read(&decoder->SurfacesFilled)) {
-	Debug(3, "video: new stream frame %dms\n", GetMsTicks() - VideoSwitch);
+	Debug(4, "video: new stream frame %dms\n", GetMsTicks() - VideoSwitch);
     }
 #endif
 

@@ -1759,7 +1759,6 @@ static void VideoStreamOpen(VideoStream * stream)
     stream->SkipStream = 1;
     stream->CodecID = AV_CODEC_ID_NONE;
     stream->LastCodecID = AV_CODEC_ID_NONE;
-
     if ((stream->HwDecoder = VideoNewHwDecoder(stream))) {
 	stream->Decoder = CodecVideoNewDecoder(stream->HwDecoder);
 	VideoPacketInit(stream);
@@ -2670,7 +2669,7 @@ void StillPicture(const uint8_t * data, int size)
     // H264 NAL End of Sequence
     static uint8_t seq_end_h264[] = { 0x00, 0x00, 0x00, 0x01, 0x0A };
     // H265 NAL End of Sequence
-    static uint8_t seq_end_h265[] = { 0x00, 0x00, 0x00, 0x01, 0x48, 0x00 };
+    static uint8_t seq_end_h265[] = { 0x00, 0x00, 0x00, 0x01, 0x48, 0x01 }; //0x48 = end of seq   0x4a = end of stream
     int i;
     int old_video_hardware_decoder;
 
@@ -2690,8 +2689,14 @@ void StillPicture(const uint8_t * data, int size)
     VideoResetPacket(MyVideoStream);
     old_video_hardware_decoder = VideoHardwareDecoder;
     // enable/disable hardware decoder for still picture
-    if (VideoHardwareDecoder != ConfigStillDecoder) {
+    if ((VideoHardwareDecoder != ConfigStillDecoder) && (MyVideoStream->CodecID != AV_CODEC_ID_HEVC)) {
 	VideoHardwareDecoder = ConfigStillDecoder;
+	VideoNextPacket(MyVideoStream, AV_CODEC_ID_NONE);	// close last stream
+    }
+
+    if (MyVideoStream->CodecID == AV_CODEC_ID_HEVC) {
+	VideoHardwareDecoder = 1;
+//	MyVideoStream->LastCodecID = AV_CODEC_ID_HEVC;
 	VideoNextPacket(MyVideoStream, AV_CODEC_ID_NONE);	// close last stream
     }
 
@@ -2704,7 +2709,7 @@ void StillPicture(const uint8_t * data, int size)
 #ifdef STILL_DEBUG
     fprintf(stderr, "still-picture\n");
 #endif
-    for (i = 0; i < (MyVideoStream->CodecID == AV_CODEC_ID_HEVC ? 1 : 4);
+    for (i = 0; i < (MyVideoStream->CodecID == AV_CODEC_ID_HEVC ? 3 : 4);
 	++i) {
 	const uint8_t *split;
 	int n;
