@@ -2689,14 +2689,8 @@ void StillPicture(const uint8_t * data, int size)
     VideoResetPacket(MyVideoStream);
     old_video_hardware_decoder = VideoHardwareDecoder;
     // enable/disable hardware decoder for still picture
-    if ((VideoHardwareDecoder != ConfigStillDecoder) && (MyVideoStream->CodecID != AV_CODEC_ID_HEVC)) {
+    if (VideoHardwareDecoder != ConfigStillDecoder) {
 	VideoHardwareDecoder = ConfigStillDecoder;
-	VideoNextPacket(MyVideoStream, AV_CODEC_ID_NONE);	// close last stream
-    }
-
-    if (MyVideoStream->CodecID == AV_CODEC_ID_HEVC) {
-	VideoHardwareDecoder = 1;
-//	MyVideoStream->LastCodecID = AV_CODEC_ID_HEVC;
 	VideoNextPacket(MyVideoStream, AV_CODEC_ID_NONE);	// close last stream
     }
 
