@@ -55,9 +55,19 @@ The NVIDIA driver currently does only support HEVC with 8 Bit. Also the routing 
 It always sends the sound to the first port (DVI Port). This seems a problem from alsa. 
 
 Current Status of AMD:
-The AMD driver suppports both (8 Bit and 10 Bit) HEVC codecs. But currently FFMEPG does not support the 10 Bit part.
+The AMD driver suppports both (8 Bit and 10 Bit) HEVC codecs. But currently FFMEPG does not support the 10 Bit part. With the provided patch "ffmpeg_patch_for_amd.txt" also UHD with 10 Bit will work.
+The patch should work with FFmepg 3.2.x
+You also have to patch the file video.c and change the output surface to 10 Bit RGB Format around line 6726. Then Autocrop and screen capture will not work anymore:
+    //
+    //  Create display output surfaces
+    //
+    // format = VDP_RGBA_FORMAT_B8G8R8A8;
+    // FIXME: does a 10bit rgba produce a better output?  
+    format = VDP_RGBA_FORMAT_R10G10B10A2;
+ 
 
-So with both cards only DVB-T2 HD can be decoded. I will try to provide a patch fpr FFMPEG 3.2 to support 10 Bit HEVC soon.
+So with NVIDIA cards only DVB-T2 HD can be decoded and with AMD full UHD is working.
+
 You have to adapt the Makefile to your needs. I use FFMPEG 3.2, but I assume 3.1 will also do.
 
 Good luck
