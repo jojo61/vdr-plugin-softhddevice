@@ -202,6 +202,7 @@ typedef enum _video_resolutions_
     VideoResolution720p,		///< ...x720 progressive
     VideoResolutionFake1080i,		///< 1280x1080 1440x1080 interlaced
     VideoResolution1080i,		///< 1920x1080 interlaced
+    VideoResolutionUHD,			/// UHD progressive
     VideoResolutionMax			///< number of resolution indexs
 } VideoResolutions;
 
@@ -375,7 +376,7 @@ static int VideoCutLeftRight[VideoResolutionMax];
     /// Color space ITU-R BT.601, ITU-R BT.709, ...
 static const VideoColorSpace VideoColorSpaces[VideoResolutionMax] = {
     VideoColorSpaceBt601, VideoColorSpaceBt709, VideoColorSpaceBt709,
-    VideoColorSpaceBt709
+    VideoColorSpaceBt709,VideoColorSpaceBt709
 };
 
     /// Default scaling mode
@@ -1315,6 +1316,9 @@ static VideoResolutions VideoResolutionGroup(int width, int height,
     __attribute__ ((unused))
     int interlace)
 {
+    if (height == 2160) {
+	return VideoResolutionUHD;
+    }
     if (height <= 576) {
 	return VideoResolution576i;
     }
@@ -11569,6 +11573,7 @@ void VideoSetDeinterlace(int mode[VideoResolutionMax])
     VideoDeinterlace[1] = mode[1];
     VideoDeinterlace[2] = mode[2];
     VideoDeinterlace[3] = mode[3];
+    VideoDeinterlace[4] = mode[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11581,6 +11586,7 @@ void VideoSetSkipChromaDeinterlace(int onoff[VideoResolutionMax])
     VideoSkipChromaDeinterlace[1] = onoff[1];
     VideoSkipChromaDeinterlace[2] = onoff[2];
     VideoSkipChromaDeinterlace[3] = onoff[3];
+    VideoSkipChromaDeinterlace[4] = onoff[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11593,6 +11599,7 @@ void VideoSetInverseTelecine(int onoff[VideoResolutionMax])
     VideoInverseTelecine[1] = onoff[1];
     VideoInverseTelecine[2] = onoff[2];
     VideoInverseTelecine[3] = onoff[3];
+    VideoInverseTelecine[4] = onoff[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11605,6 +11612,7 @@ void VideoSetDenoise(int level[VideoResolutionMax])
     VideoDenoise[1] = level[1];
     VideoDenoise[2] = level[2];
     VideoDenoise[3] = level[3];
+    VideoDenoise[4] = level[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11617,6 +11625,7 @@ void VideoSetSharpen(int level[VideoResolutionMax])
     VideoSharpen[1] = level[1];
     VideoSharpen[2] = level[2];
     VideoSharpen[3] = level[3];
+    VideoSharpen[4] = level[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11631,6 +11640,7 @@ void VideoSetScaling(int mode[VideoResolutionMax])
     VideoScaling[1] = mode[1];
     VideoScaling[2] = mode[2];
     VideoScaling[3] = mode[3];
+    VideoScaling[4] = mode[4];
     VideoSurfaceModesChanged = 1;
 }
 
@@ -11645,6 +11655,7 @@ void VideoSetCutTopBottom(int pixels[VideoResolutionMax])
     VideoCutTopBottom[1] = pixels[1];
     VideoCutTopBottom[2] = pixels[2];
     VideoCutTopBottom[3] = pixels[3];
+    VideoCutTopBottom[4] = pixels[4];
     // FIXME: update output
 }
 
@@ -11659,6 +11670,7 @@ void VideoSetCutLeftRight(int pixels[VideoResolutionMax])
     VideoCutLeftRight[1] = pixels[1];
     VideoCutLeftRight[2] = pixels[2];
     VideoCutLeftRight[3] = pixels[3];
+    VideoCutLeftRight[4] = pixels[4];
     // FIXME: update output
 }
 
