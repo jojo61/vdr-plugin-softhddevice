@@ -19,9 +19,9 @@ OSS ?= 1
 VDPAU ?= $(shell pkg-config --exists vdpau && echo 1)
     # support VA-API video output module (deprecated)
 VAAPI ?= $(shell pkg-config --exists libva && echo 1)
-VAAPI =  0
     # support glx output
 OPENGL ?= $(shell pkg-config --exists gl glu && echo 1)
+OPENGL = 0
     # screensaver disable/enable
 SCREENSAVER ?= 1
     # use ffmpeg libswresample
@@ -34,6 +34,7 @@ AVRESAMPLE = 0
 endif
 
 CONFIG :=  #-DDEBUG #-DOSD_DEBUG	# enable debug output+functions
+CONFIG += -DCUVID			# enable CUVID decoder
 #CONFIG += -DSTILL_DEBUG=2		# still picture debug verbose level
 
 CONFIG += -DAV_INFO -DAV_INFO_TIME=3000	# info/debug a/v sync
@@ -142,7 +143,7 @@ endif
 _CFLAGS += $(shell pkg-config --cflags  x11 x11-xcb xcb xcb-icccm)
 LIBS += -lrt $(shell pkg-config --libs  x11 x11-xcb xcb xcb-icccm)
 
-_CFLAGS += -I/usr/include/libavcodec
+_CFLAGS += -I/usr/include/libavcodec 
 LIBS += -lavcodec
 _CFLAGS += -I/usr/include/libavresample
 #LIBS += -lavresample

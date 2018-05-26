@@ -203,10 +203,6 @@ static int Codec_get_buffer2(AVCodecContext * video_ctx, AVFrame * frame, int fl
 
     decoder = video_ctx->opaque;
 
-    if (decoder->hwaccel_get_buffer && AV_PIX_FMT_VDPAU == decoder->hwaccel_pix_fmt) {
-           //Debug(3,"hwaccel get_buffer\n");
-           return decoder->hwaccel_get_buffer(video_ctx, frame, flags);
-    }
 
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(54,86,100)
@@ -221,6 +217,10 @@ static int Codec_get_buffer2(AVCodecContext * video_ctx, AVFrame * frame, int fl
 	fmts[0] = video_ctx->pix_fmt;
 	fmts[1] = AV_PIX_FMT_NONE;
 	Codec_get_format(video_ctx, fmts);
+    }
+    if (decoder->hwaccel_get_buffer && (AV_PIX_FMT_VDPAU == decoder->hwaccel_pix_fmt || AV_PIX_FMT_CUDA == decoder->hwaccel_pix_fmt)) {
+           //Debug(3,"hwaccel get_buffer\n");
+           return decoder->hwaccel_get_buffer(video_ctx, frame, flags);
     }
 #ifdef USE_VDPAU
     // VDPAU: AV_PIX_FMT_VDPAU_H264 .. AV_PIX_FMT_VDPAU_VC1 AV_PIX_FMT_VDPAU_MPEG4
@@ -408,6 +408,7 @@ void CodecVideoDelDecoder(VideoDecoder * decoder)
     free(decoder);
 }
 
+
 /**
 **	Open video decoder.
 **
@@ -436,6 +437,11 @@ void CodecVideoOpen(VideoDecoder * decoder, int codec_id)
 	    case AV_CODEC_ID_H264:
 		name = VideoHardwareDecoder ? "h264_vdpau" : NULL;
 		break;
+#ifdef CUVID
+	    case AV_CODEC_ID_HEVC:
+		name = VideoHardwareDecoder ? "hevc_cuvid" : NULL;
+		break;
+#endif
 	}
     }
 
@@ -472,6 +478,13 @@ void CodecVideoOpen(VideoDecoder * decoder, int codec_id)
 	    SLICE_FLAG_CODED_ORDER | SLICE_FLAG_ALLOW_FIELD;
 	decoder->VideoCtx->thread_count = 1;
 	decoder->VideoCtx->active_thread_type = 0;
+    }
+     
+    if (strcmp(name,"h264_cuvid") == 0) {
+       if (av_opt_set_int(decoder->VideoCtx->priv_data, "deint", 0 ,0) < 0) {
+  	  pthread_mutex_unlock(&CodecLockMutex);
+	  Fatal(_("codec: can't set options to video codec!\n"));
+       }
     }
 
     if (avcodec_open2(decoder->VideoCtx, video_codec, NULL) < 0) {
@@ -631,24 +644,31 @@ void CodecVideoDecode(VideoDecoder * decoder, const AVPacket * avpkt)
 {
     AVCodecContext *video_ctx;
     AVFrame *frame;
-    int used;
+    int used,ret;
     int got_frame;
-    AVPacket pkt[1];
+    int consumed = 0;
+    AVPacket *pkt;
 
     video_ctx = decoder->VideoCtx;
     frame = decoder->Frame;
-    *pkt = *avpkt;			// use copy
+    pkt = avpkt;			// use copy
 
   next_part:
-    // FIXME: this function can crash with bad packets
-    used = avcodec_decode_video2(video_ctx, frame, &got_frame, pkt);
-    Debug(4, "%s: %p %d -> %d %d\n", __FUNCTION__, pkt->data, pkt->size, used,
-	got_frame);
-
-    if (used < 0) {
-	Debug(3, "codec: bad video frame\n");
-	return;
+    
+    got_frame = 0;
+    ret = avcodec_send_packet(video_ctx, pkt);
+    if (ret >= 0 || ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+        if (ret >= 0)
+            consumed = 1;
+        ret = avcodec_receive_frame(video_ctx, frame);
+        if (ret >= 0)
+            got_frame= 1;
+        if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+            ret = 0;
+    } else {
+        consumed = 1;
     }
+
 
     if (got_frame) {			// frame completed
 #ifdef FFMPEG_WORKAROUND_ARTIFACTS
@@ -675,27 +695,6 @@ void CodecVideoDecode(VideoDecoder * decoder, const AVPacket * avpkt)
 	Debug(4, "codec: %8d incomplete interlaced frame %d bytes used\n",
 	    video_ctx->frame_number, used);
     }
-
-#if 1
-    // old code to support truncated or multi frame packets
-    if (used != pkt->size) {
-	// ffmpeg 0.8.7 dislikes our seq_end_h264 and enters endless loop here
-	if (used == 0 && pkt->size == 5 && pkt->data[4] == 0x0A) {
-	    Warning("codec: ffmpeg 0.8.x workaround used\n");
-	    return;
-	}
-	if (used >= 0 && used < pkt->size) {
-	    // some tv channels, produce this
-	    Debug(4,
-		"codec: ooops didn't use complete video packet used %d of %d\n",
-		used, pkt->size);
-	    pkt->size -= used;
-	    pkt->data += used;
-	    // FIXME: align problem?
-	    goto next_part;
-	}
-    }
-#endif
 
     // new AVFrame API
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(56,28,1)
